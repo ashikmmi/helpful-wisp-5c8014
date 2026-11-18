@@ -1,7 +1,7 @@
 "use strict";
 /* ============ EDIT THIS ONE PLACE ============ */
 const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbwTepPr-LjgBPqQRzLwaWQYIhUsXjNW_GYpqvz3z9zuySDOW9AZFgmUYJTJ3u5wJF8fLg/exec",                                   // paste your Google Apps Script web-app URL here (ends with /exec)
+  API_URL: "https://script.google.com/macros/s/AKfycbwNIDa2VWNbsSKqnbPlUq9DrI_iQ1tNvKMZwWYmkP3r-1QpZYZnSTgcdncmmwm4xfPS/exec",                                   // paste your Google Apps Script web-app URL here (ends with /exec)
   EVENT_NAME: "WINTER GETTOGETHER",
   EVENT_LINE: "Friday, 20 November 2026 · Istirah",
   CURRENCY: "SAR"
