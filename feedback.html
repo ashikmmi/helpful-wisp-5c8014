@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Winter Gettogether – Feedback</title>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<div class="snow" id="snow" aria-hidden="true"></div>
+<div class="wrap">
+  <header>
+    <div class="flake">❄️</div>
+    <h1>WINTER GETTOGETHER</h1>
+    <p id="evline"></p>
+    <span class="page" id="pagetag"></span>
+  </header>
+
+  <div class="card" id="formCard">
+    <h2>How was your day?</h2>
+    <p class="sub">Tap the stars: 1 = poor, 5 = excellent. It takes one minute.</p>
+    <div id="questions"></div>
+    <div class="q">
+      <div class="qt"><label for="remarks" style="margin:0;font-size:16px">Any remarks or suggestions?</label></div>
+      <textarea id="remarks" maxlength="2000" placeholder="What did you enjoy? What could we do better next time?"></textarea>
+    </div>
+    <div class="q" style="border-bottom:0">
+      <label for="fname">Your name <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input id="fname" type="text" maxlength="80" autocomplete="name" placeholder="Leave blank to stay anonymous" style="font-size:16px">
+    </div>
+    <div class="msg bad hidden" id="err"></div>
+    <button class="btn ok" id="submitBtn">Send feedback</button>
+  </div>
+
+  <div class="card hidden" id="thanks">
+    <div class="greet">
+      <div class="big">💙</div>
+      <h2>Thank you!</h2>
+      <p>Your feedback helps us make the next Winter Gettogether even better.</p>
+    </div>
+    <button class="btn ghost" id="againBtn">Submit another response</button>
+  </div>
+</div>
+<div class="foot" id="foot"></div>
+
+<script src="shared.js"></script>
+<script>
+/* ===== Edit the questions here (each is rated 1–5 stars). The Google Sheet gets one column per question. ===== */
+const QUESTIONS = [
+  "Overall experience",
+  "Venue and facilities",
+  "Food and refreshments",
+  "Games and activities",
+  "Organisation and registration",
+  "How likely are you to join the next gettogether?"
+];
+const LABELS = ["Poor", "Fair", "Good", "Very good", "Excellent"];
+let ratings = QUESTIONS.map(() => 0);
+
+function build(){
+  $("questions").innerHTML = QUESTIONS.map((q, n) =>
+    "<div class='q' id='q" + n + "'><div class='qt'>" + esc(q) + "</div><div class='stars' role='radiogroup' aria-label='" + esc(q) + "'>" +
+    [1,2,3,4,5].map(v => "<button type='button' role='radio' aria-checked='false' aria-label='" + v + " star" + (v > 1 ? "s" : "") + "' data-q='" + n + "' data-v='" + v + "'>★</button>").join("") +
+    "<span class='lbl' id='l" + n + "'></span></div></div>").join("");
+}
+function paint(n){
+  const row = $("q" + n);
+  row.querySelectorAll("button").forEach(b => { const on = +b.dataset.v <= ratings[n]; b.classList.toggle("on", on); b.setAttribute("aria-checked", +b.dataset.v === ratings[n] ? "true" : "false"); });
+  $("l" + n).textContent = ratings[n] ? LABELS[ratings[n] - 1] : "";
+  row.classList.remove("err");
+}
+async function submit(){
+  const err = $("err"); err.classList.add("hidden");
+  const missing = ratings.map((r, n) => r ? -1 : n).filter(n => n >= 0);
+  if (missing.length){
+    missing.forEach(n => $("q" + n).classList.add("err"));
+    showMsg(err, "Please rate: " + missing.map(n => QUESTIONS[n]).join("; ") + ".");
+    $("q" + missing[0]).scrollIntoView({behavior:"smooth", block:"center"}); return;
+  }
+  const b = $("submitBtn"); b.disabled = true; b.textContent = "Sending…";
+  try {
+    await apiPost({action:"feedback", name:$("fname").value.trim(), remarks:$("remarks").value.trim(), answers: QUESTIONS.map((q, n) => ({q, r:ratings[n]}))});
+    $("formCard").classList.add("hidden"); $("thanks").classList.remove("hidden"); window.scrollTo({top:0, behavior:"smooth"});
+  } catch(e){ showMsg(err, e.message); }
+  finally { b.disabled = false; b.textContent = "Send feedback"; }
+}
+function reset(){
+  ratings = QUESTIONS.map(() => 0); QUESTIONS.forEach((q, n) => paint(n));
+  $("remarks").value = ""; $("fname").value = "";
+  $("thanks").classList.add("hidden"); $("formCard").classList.remove("hidden"); window.scrollTo({top:0});
+}
+pageInit("Feedback", "feedback");
+build();
+$("questions").addEventListener("click", e => { const b = e.target.closest("button[data-q]"); if (!b) return; const n = +b.dataset.q; ratings[n] = +b.dataset.v; paint(n); });
+$("submitBtn").onclick = submit; $("againBtn").onclick = reset;
+</script>
+</body>
+</html>

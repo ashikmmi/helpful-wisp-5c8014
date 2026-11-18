@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Winter Gettogether – My expense</title>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<div class="snow" id="snow" aria-hidden="true"></div>
+<div class="wrap">
+  <header>
+    <div class="flake">❄️</div>
+    <h1>WINTER GETTOGETHER</h1>
+    <p id="evline"></p>
+    <span class="page" id="pagetag"></span>
+  </header>
+
+  <div class="card" id="lookupCard">
+    <h2>View my expense</h2>
+    <p class="sub">Enter the mobile number you registered with to see the amount to be collected.</p>
+    <label for="mobile">Mobile number</label>
+    <input id="mobile" type="tel" inputmode="tel" autocomplete="tel" placeholder="05xxxxxxxx" enterkeyhint="search">
+    <button class="btn" id="findBtn">Show my expense</button>
+    <div class="msg bad hidden" id="msg"></div>
+  </div>
+
+  <div class="card hidden" id="resultCard">
+    <div class="guest-name" id="rName"></div>
+    <p class="sub" style="margin-bottom:6px">Your share for the Winter Gettogether</p>
+    <div id="rBody"></div>
+    <button class="btn ghost" id="backBtn">Check another number</button>
+  </div>
+</div>
+<div class="foot" id="foot"></div>
+
+<script src="shared.js"></script>
+<script>
+async function find(){
+  const msg = $("msg"); msg.classList.add("hidden");
+  const key = normMobile($("mobile").value);
+  if (!key){ showMsg(msg, "Please enter a valid mobile number (e.g. 05xxxxxxxx)."); return; }
+  const b = $("findBtn"); b.disabled = true; b.textContent = "Looking up…";
+  try {
+    const d = await apiGet({action:"expense", m:key});
+    if (!d.found){ showMsg(msg, "We couldn’t find that number in the registration list. Please check the number or ask the organiser."); return; }
+    $("rName").textContent = d.name;
+    const cur = esc(CONFIG.CURRENCY), st = String(d.status || "").trim();
+    let h;
+    if (d.amount == null || d.amount === ""){
+      h = "<div class='badge none'>No expense has been recorded for you yet. Please check again later.</div>";
+    } else {
+      h = "<div class='amount'>" + fmtMoney(d.amount) + " <small>" + cur + "</small></div>";
+      if (d.paid) h += "<div class='badge paid'>✔ Paid — thank you!</div>";
+      else if (/^bal/i.test(st)) h += "<div class='badge bal'>Balance to pay: " + fmtMoney(d.amount) + " " + cur + "</div>";
+      else h += "<div class='badge bal'>" + (st ? esc(st) : "Amount to be collected") + "</div>";
+    }
+    $("rBody").innerHTML = h;
+    $("lookupCard").classList.add("hidden"); $("resultCard").classList.remove("hidden"); window.scrollTo({top:0, behavior:"smooth"});
+  } catch(e){ showMsg(msg, e.message); }
+  finally { b.disabled = false; b.textContent = "Show my expense"; }
+}
+pageInit("My expense", "expense");
+$("findBtn").onclick = find;
+$("mobile").addEventListener("keydown", e => { if (e.key === "Enter") find(); });
+$("backBtn").onclick = () => { $("mobile").value = ""; $("resultCard").classList.add("hidden"); $("lookupCard").classList.remove("hidden"); $("mobile").focus(); };
+</script>
+</body>
+</html>
