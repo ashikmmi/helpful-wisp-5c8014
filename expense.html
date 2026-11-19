@@ -17,7 +17,15 @@
     <span class="page" id="pagetag"></span>
   </header>
 
-  <div class="card" id="lookupCard">
+  <div class="card hidden" id="closedCard">
+    <div class="greet">
+      <div class="big">🕒</div>
+      <h2>My expense opens soon</h2>
+      <p>You will be able to see your amount here at the end of the event. Please come back then.</p>
+    </div>
+  </div>
+
+  <div class="card hidden" id="lookupCard">
     <h2>View my expense</h2>
     <p class="sub">Enter the mobile number you registered with to see the amount to be collected.</p>
     <label for="mobile">Mobile number</label>
@@ -62,6 +70,7 @@ async function find(){
   finally { b.disabled = false; b.textContent = "Show my expense"; }
 }
 pageInit("My expense", "expense");
+getConfig().then(cfg => $(cfg && !cfg.expense ? "closedCard" : "lookupCard").classList.remove("hidden"));
 $("findBtn").onclick = find;
 $("mobile").addEventListener("keydown", e => { if (e.key === "Enter") find(); });
 $("backBtn").onclick = () => { $("mobile").value = ""; $("resultCard").classList.add("hidden"); $("lookupCard").classList.remove("hidden"); $("mobile").focus(); };

@@ -125,6 +125,7 @@ header .page{background:rgba(243,220,154,.16);color:#f3dc9a;border:1px solid rgb
 .card{border-top:4px solid #d4af37}
 .btn.ok{background:linear-gradient(#e8c966,#c99a2e);color:#2b2100}
 .foot a{color:#f3dc9a}
+.foot .off{color:#8fb0a6;margin:0 6px;cursor:default}
 .foot{padding-bottom:70px}
 @media (prefers-reduced-motion:no-preference){.flake::before{animation:glow 4s ease-in-out infinite alternate}}
 @keyframes glow{from{filter:drop-shadow(0 0 6px rgba(243,220,154,.35))}to{filter:drop-shadow(0 0 16px rgba(243,220,154,.8))}}

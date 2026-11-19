@@ -17,7 +17,15 @@
     <span class="page" id="pagetag"></span>
   </header>
 
-  <div class="card" id="formCard">
+  <div class="card hidden" id="closedCard">
+    <div class="greet">
+      <div class="big">🕒</div>
+      <h2>Feedback opens soon</h2>
+      <p>We will open this page at the end of the event. Please come back then.</p>
+    </div>
+  </div>
+
+  <div class="card hidden" id="formCard">
     <h2>How was your day?</h2>
     <p class="sub">Tap the stars: 1 = poor, 5 = excellent. It takes one minute.</p>
     <div id="questions"></div>
@@ -91,6 +99,7 @@ function reset(){
   $("thanks").classList.add("hidden"); $("formCard").classList.remove("hidden"); window.scrollTo({top:0});
 }
 pageInit("Feedback", "feedback");
+getConfig().then(cfg => $(cfg && !cfg.feedback ? "closedCard" : "formCard").classList.remove("hidden"));
 build();
 $("questions").addEventListener("click", e => { const b = e.target.closest("button[data-q]"); if (!b) return; const n = +b.dataset.q; ratings[n] = +b.dataset.v; paint(n); });
 $("submitBtn").onclick = submit; $("againBtn").onclick = reset;

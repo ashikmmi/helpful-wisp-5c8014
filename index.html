@@ -91,6 +91,16 @@
         </div>
       </div>
 
+      <div class="card" id="gateCard">
+        <h2>Open pages for guests</h2>
+        <p class="sub">Feedback and My expense stay closed until you open them. While closed, guests see “opens at the end of the event”.</p>
+        <div class="steppers">
+          <div class="row"><div><b>Feedback</b><small id="gFbState"></small></div><button class="btn small" id="gFbBtn" type="button"></button></div>
+          <div class="row"><div><b>My expense</b><small id="gExState"></small></div><button class="btn small" id="gExBtn" type="button"></button></div>
+        </div>
+        <button class="btn ok" id="gBothBtn" type="button">Open both for guests</button>
+      </div>
+
       <div class="card hidden" id="qrCard">
         <h2>QR codes</h2>
         <p class="sub">Print and display. Each opens the matching page on your website.</p>
@@ -114,7 +124,7 @@
 <script src="qrcode.js"></script>
 <script src="shared.js"></script>
 <script>
-let current = null, vals = {a:0, k:0, i:0}, pin = "", parties = [], money = null, timer = null, tab = "pending";
+let current = null, vals = {a:0, k:0, i:0}, pin = "", parties = [], money = null, cfg = {feedback:false, expense:false}, timer = null, tab = "pending";
 const tot = g => g.a + g.k + g.i;
 
 /* ---------- guest flow ---------- */
@@ -162,7 +172,22 @@ async function confirmArrival(){
 function resetGuest(){ $("mobile").value = ""; $("lookupMsg").classList.add("hidden"); current = null; show("stepLookup"); $("mobile").focus(); }
 
 /* ---------- staff ---------- */
+function renderGates(){
+  [["Fb", "feedback"], ["Ex", "expense"]].forEach(([k, name]) => {
+    const on = cfg[name];
+    $("g" + k + "State").textContent = on ? "Open: guests can use it now" : "Closed: guests see “opens at the end of the event”";
+    $("g" + k + "Btn").textContent = on ? "Close" : "Open for guests";
+    $("g" + k + "Btn").className = "btn small " + (on ? "ghost" : "ok");
+  });
+  $("gBothBtn").classList.toggle("hidden", cfg.feedback && cfg.expense);
+}
+async function setGate(patch, question){
+  if (!confirm(question)) return;
+  try { const d = await apiPost(Object.assign({action: "setconfig", pin}, patch)); cfg = d.config; renderGates(); }
+  catch(e){ alert(e.message); }
+}
 function renderDash(){
+  renderGates();
   const reg = {p:parties.length, a:0, k:0, i:0}, arr = {p:0, a:0, k:0, i:0};
   parties.forEach(g => { reg.a += g.a; reg.k += g.k; reg.i += g.i; if (g.ci){ arr.p++; arr.a += g.ci.a; arr.k += g.ci.k; arr.i += g.ci.i; } });
   const regT = reg.a + reg.k + reg.i, arrT = arr.a + arr.k + arr.i, left = reg.p - arr.p;
@@ -197,7 +222,7 @@ function renderTable(){
   $("tbl").innerHTML = h;
 }
 async function refresh(){
-  try { const d = await apiGet({action:"stats", pin}); parties = d.parties; money = d.money; renderDash(); return true; }
+  try { const d = await apiGet({action:"stats", pin}); parties = d.parties; money = d.money; cfg = d.config || cfg; renderDash(); return true; }
   catch(e){ $("syncLine").textContent = "⚠ " + e.message; return false; }
 }
 async function staffCheckIn(key){
@@ -231,22 +256,25 @@ async function checkPin(){
   const m = $("pinMsg"); m.classList.add("hidden"); pin = $("pin").value.trim();
   if (!pin){ showMsg(m, "Enter the PIN."); return; }
   const b = $("pinBtn"); b.disabled = true;
-  try { await apiGet({action:"stats", pin}).then(d => { parties = d.parties; money = d.money; }); try { sessionStorage.setItem("wg_pin", pin); } catch(e){} await openDash(); renderDash(); }
+  try { await apiGet({action:"stats", pin}).then(d => { parties = d.parties; money = d.money; cfg = d.config || cfg; }); try { sessionStorage.setItem("wg_pin", pin); } catch(e){} await openDash(); renderDash(); }
   catch(e){ showMsg(m, e.message); }
   finally { b.disabled = false; }
 }
 
 /* ---------- init ---------- */
-pageInit("Check-in", "checkin");
 const staffMode = new URLSearchParams(location.search).has("staff");
+window.FOOT_EXTRA = staffMode ? "" : " · <a href='?staff'>Staff</a>";
+pageInit("Check-in", "checkin");
 $("guestView").classList.toggle("hidden", staffMode);
 $("staffView").classList.toggle("hidden", !staffMode);
-$("foot").innerHTML += staffMode ? "" : " · <a href='?staff'>Staff</a>";
 $("findBtn").onclick = findGuest;
 $("mobile").addEventListener("keydown", e => { if (e.key === "Enter") findGuest(); });
 $("confirmBtn").onclick = confirmArrival; $("backBtn").onclick = resetGuest; $("nextBtn").onclick = resetGuest;
 document.querySelectorAll(".step button").forEach(b => b.onclick = () => { const f = b.dataset.f, d = +b.dataset.d; vals[f] = Math.max(0, Math.min(30, vals[f] + d)); renderVals(); });
 $("pinBtn").onclick = checkPin; $("pin").addEventListener("keydown", e => { if (e.key === "Enter") checkPin(); });
+$("gFbBtn").onclick = () => setGate({feedback: !cfg.feedback}, cfg.feedback ? "Close the Feedback page for guests?" : "Open the Feedback page for all guests now?");
+$("gExBtn").onclick = () => setGate({expense: !cfg.expense}, cfg.expense ? "Close the My expense page for guests?" : "Open the My expense page now? Guests will see their amount and whether it is Paid or Balance.");
+$("gBothBtn").onclick = () => setGate({feedback: true, expense: true}, "Open Feedback and My expense for all guests now?");
 $("refreshBtn").onclick = refresh; $("csvBtn").onclick = exportCsv; $("qrBtn").onclick = showQr;
 $("printQr").onclick = () => { document.body.classList.add("printqr"); window.print(); setTimeout(() => document.body.classList.remove("printqr"), 500); };
 $("q").oninput = renderTable;

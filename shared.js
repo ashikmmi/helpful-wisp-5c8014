@@ -45,7 +45,19 @@ function pageInit(pageTitle, active){
     snow.appendChild(s);
   }
   const links = [["index.html", "Check-in", "checkin"], ["eventlist.html", "Event list", "eventlist"], ["responsible.html", "Responsible", "responsible"], ["feedback.html", "Feedback", "feedback"], ["expense.html", "My expense", "expense"]];
-  $("foot").innerHTML = links.map(l => l[2] === active ? "<b style='color:#fff'>" + l[1] + "</b>" : "<a href='" + l[0] + "'>" + l[1] + "</a>").join(" · ");
+  const gated = {feedback: 1, expense: 1};      // these two links stay greyed out until staff open them
+  const draw = cfg => {                          // cfg: undefined = still loading, null = unknown, object = known
+    $("foot").innerHTML = links.map(l => {
+      if (l[2] === active) return "<b style='color:#fff'>" + l[1] + "</b>";
+      const closed = gated[l[2]] && (cfg === undefined || (cfg && !cfg[l[2]]));
+      return closed ? "<span class='off' title='Opens at the end of the event'>" + l[1] + " (soon)</span>" : "<a href='" + l[0] + "'>" + l[1] + "</a>";
+    }).join(" · ") + (window.FOOT_EXTRA || "");
+  };
+  draw(undefined);
+  getConfig().then(draw);
+}
+async function getConfig(){
+  try { return (await apiGet({action: "config"})).config; } catch(e){ return null; }
 }
 
 /* ---------- read-only lists (Event list / Responsible), live from the Google Sheet ---------- */
