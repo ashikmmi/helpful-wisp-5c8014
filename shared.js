@@ -45,7 +45,7 @@ function pageInit(pageTitle, active){
     snow.appendChild(s);
   }
   const links = [["index.html", "Check-in", "checkin"], ["eventlist.html", "Event list", "eventlist"], ["responsible.html", "Responsible", "responsible"], ["feedback.html", "Feedback", "feedback"], ["expense.html", "My expense", "expense"]];
-  const gated = {feedback: 1, expense: 1};      // these two links stay greyed out until staff open them
+  const gated = {checkin: 1, feedback: 1, expense: 1};      // these links stay greyed out until they are opened
   const draw = cfg => {                          // cfg: undefined = still loading, null = unknown, object = known
     $("foot").innerHTML = links.map(l => {
       if (l[2] === active) return "<b style='color:#fff'>" + l[1] + "</b>";
@@ -55,6 +55,12 @@ function pageInit(pageTitle, active){
   };
   draw(undefined);
   getConfig().then(draw);
+}
+function opensText(cfg){
+  const d = new Date(cfg.opensAt);
+  const day = d.toLocaleDateString("en-GB", {timeZone: "Asia/Riyadh", weekday: "long", day: "numeric", month: "long", year: "numeric"});
+  const tm = d.toLocaleTimeString("en-US", {timeZone: "Asia/Riyadh", hour: "numeric", minute: "2-digit", hour12: true});
+  return day + " at " + tm + " (Saudi time)";
 }
 async function getConfig(){
   try { return (await apiGet({action: "config"})).config; } catch(e){ return null; }

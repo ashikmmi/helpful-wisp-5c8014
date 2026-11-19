@@ -19,7 +19,16 @@
 
   <!-- ===== GUEST VIEW ===== -->
   <div id="guestView">
-    <div class="card" id="stepLookup">
+    <div class="card hidden" id="ciClosed">
+      <div class="greet">
+        <div class="big">🕒</div>
+        <h2>Check-in opens soon</h2>
+        <p id="ciWhen"></p>
+        <p>This page opens by itself at that time. Please come back then.</p>
+      </div>
+    </div>
+
+    <div class="card hidden" id="stepLookup">
       <h2>Welcome! Let’s check you in</h2>
       <p class="sub">Enter the mobile number you used to register.</p>
       <label for="mobile">Mobile number</label>
@@ -93,8 +102,14 @@
 
       <div class="card" id="gateCard">
         <h2>Open pages for guests</h2>
-        <p class="sub">Feedback and My expense stay closed until you open them. While closed, guests see “opens at the end of the event”.</p>
+        <p class="sub">Check-in opens by itself at the scheduled time. Feedback and My expense stay closed until you open them. While a page is closed, guests see an “opens soon” message.</p>
         <div class="steppers">
+          <div class="row"><div><b>Check-in</b><small id="gCiState"></small></div></div>
+          <div class="row" style="justify-content:flex-start;flex-wrap:wrap;gap:8px">
+            <button class="btn small" data-ci="auto" type="button">Automatic</button>
+            <button class="btn small" data-ci="open" type="button">Open now</button>
+            <button class="btn small" data-ci="closed" type="button">Close</button>
+          </div>
           <div class="row"><div><b>Feedback</b><small id="gFbState"></small></div><button class="btn small" id="gFbBtn" type="button"></button></div>
           <div class="row"><div><b>My expense</b><small id="gExState"></small></div><button class="btn small" id="gExBtn" type="button"></button></div>
         </div>
@@ -124,7 +139,7 @@
 <script src="qrcode.js"></script>
 <script src="shared.js"></script>
 <script>
-let current = null, vals = {a:0, k:0, i:0}, pin = "", parties = [], money = null, cfg = {feedback:false, expense:false}, timer = null, tab = "pending";
+let current = null, vals = {a:0, k:0, i:0}, pin = "", parties = [], money = null, cfg = {feedback:false, expense:false, checkin:false, checkinMode:"auto"}, timer = null, tab = "pending";
 const tot = g => g.a + g.k + g.i;
 
 /* ---------- guest flow ---------- */
@@ -173,6 +188,11 @@ function resetGuest(){ $("mobile").value = ""; $("lookupMsg").classList.add("hid
 
 /* ---------- staff ---------- */
 function renderGates(){
+  const when = cfg.opensAt ? opensText(cfg) : "the scheduled time";
+  $("gCiState").textContent = cfg.checkinMode === "open" ? "Open: staff opened it" :
+    cfg.checkinMode === "closed" ? "Closed by staff: stays closed until you open it" :
+    cfg.checkin ? "Open: opened automatically at the scheduled time" : "Closed: opens by itself on " + when;
+  document.querySelectorAll("[data-ci]").forEach(b => b.className = "btn small " + (b.dataset.ci === cfg.checkinMode ? "ok" : "ghost"));
   [["Fb", "feedback"], ["Ex", "expense"]].forEach(([k, name]) => {
     const on = cfg[name];
     $("g" + k + "State").textContent = on ? "Open: guests can use it now" : "Closed: guests see “opens at the end of the event”";
@@ -265,6 +285,21 @@ async function checkPin(){
 const staffMode = new URLSearchParams(location.search).has("staff");
 window.FOOT_EXTRA = staffMode ? "" : " · <a href='?staff'>Staff</a>";
 pageInit("Check-in", "checkin");
+let gateTimer = null;
+async function gateCheckin(){
+  const c = await getConfig();
+  clearTimeout(gateTimer);
+  if (c && !c.checkin){
+    $("ciWhen").textContent = "Check-in opens on " + opensText(c) + ".";
+    ["stepLookup", "stepConfirm", "stepDone"].forEach(x => $(x).classList.add("hidden"));
+    $("ciClosed").classList.remove("hidden");
+    gateTimer = setTimeout(gateCheckin, 30000);       // opens by itself while the page stays open
+  } else {
+    $("ciClosed").classList.add("hidden");
+    if (!["stepLookup", "stepConfirm", "stepDone"].some(x => !$(x).classList.contains("hidden"))) show("stepLookup");
+  }
+}
+if (!staffMode) gateCheckin();
 $("guestView").classList.toggle("hidden", staffMode);
 $("staffView").classList.toggle("hidden", !staffMode);
 $("findBtn").onclick = findGuest;
@@ -272,6 +307,10 @@ $("mobile").addEventListener("keydown", e => { if (e.key === "Enter") findGuest(
 $("confirmBtn").onclick = confirmArrival; $("backBtn").onclick = resetGuest; $("nextBtn").onclick = resetGuest;
 document.querySelectorAll(".step button").forEach(b => b.onclick = () => { const f = b.dataset.f, d = +b.dataset.d; vals[f] = Math.max(0, Math.min(30, vals[f] + d)); renderVals(); });
 $("pinBtn").onclick = checkPin; $("pin").addEventListener("keydown", e => { if (e.key === "Enter") checkPin(); });
+document.querySelectorAll("[data-ci]").forEach(b => b.onclick = () => {
+  const m = b.dataset.ci;
+  setGate({checkin: m}, m === "open" ? "Open check-in for all guests now?" : m === "closed" ? "Close check-in for guests? They will see “opens soon” until you open it." : "Put check-in back on its schedule? It opens by itself on " + opensText(cfg) + ".");
+});
 $("gFbBtn").onclick = () => setGate({feedback: !cfg.feedback}, cfg.feedback ? "Close the Feedback page for guests?" : "Open the Feedback page for all guests now?");
 $("gExBtn").onclick = () => setGate({expense: !cfg.expense}, cfg.expense ? "Close the My expense page for guests?" : "Open the My expense page now? Guests will see their amount and whether it is Paid or Balance.");
 $("gBothBtn").onclick = () => setGate({feedback: true, expense: true}, "Open Feedback and My expense for all guests now?");
