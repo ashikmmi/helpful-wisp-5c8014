@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Winter Gettogether – Responsible</title>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<div class="snow" id="snow" aria-hidden="true"></div>
+<div class="wrap wide-list">
+  <header>
+    <div class="flake">❄️</div>
+    <h1>WINTER GETTOGETHER</h1>
+    <p id="evline"></p>
+    <span class="page" id="pagetag"></span>
+  </header>
+
+  <div class="card">
+    <h2>Who is responsible</h2>
+    <p class="sub">Need help or information? Ask the person looking after that area.</p>
+    <div class="listhead noprint">
+      <input id="q" type="search" placeholder="Search…" aria-label="Search the list">
+      <button class="btn small ghost" id="refreshBtn" type="button">↻ Refresh</button>
+    </div>
+    <p class="sub hidden" id="listTitle" style="font-weight:700;color:var(--ink)"></p>
+    <div class="msg warn hidden" id="listNote"></div>
+    <div id="listBox"><p class="sub" style="margin:8px 0 0">Loading…</p></div>
+  </div>
+</div>
+<div class="foot" id="foot"></div>
+
+<script src="shared.js"></script>
+<script>
+pageInit("Responsible", "responsible");
+$("refreshBtn").onclick = () => loadList("responsible");
+loadList("responsible");
+</script>
+</body>
+</html>

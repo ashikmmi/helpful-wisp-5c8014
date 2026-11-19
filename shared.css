@@ -129,3 +129,23 @@ header .page{background:rgba(243,220,154,.16);color:#f3dc9a;border:1px solid rgb
 @media (prefers-reduced-motion:no-preference){.flake::before{animation:glow 4s ease-in-out infinite alternate}}
 @keyframes glow{from{filter:drop-shadow(0 0 6px rgba(243,220,154,.35))}to{filter:drop-shadow(0 0 16px rgba(243,220,154,.8))}}
 @media print{body::before,body::after{display:none!important}header h1::before{color:#000}}
+
+/* ===== lists (Event list / Responsible) ===== */
+a.btn{display:block;text-align:center;text-decoration:none;border-radius:12px;padding:14px 18px;font-weight:700;font-size:17px;font-family:inherit}
+.donelinks{margin-top:6px}
+.wrap.wide-list{max-width:760px}
+.lt{width:100%;border-collapse:collapse;font-size:15px}
+.lt td:first-child{font-weight:700}
+.lt a{color:var(--accent);font-weight:600}
+.lt tbody tr:nth-child(even){background:#f6faf8}
+.listhead{display:flex;gap:10px;align-items:center;margin:4px 0 12px;flex-wrap:wrap}
+.listhead input{flex:1 1 180px;font-size:16px;padding:10px 12px}
+@media (max-width:640px){
+  .lt thead{display:none}
+  .lt,.lt tbody,.lt tr,.lt td{display:block;width:100%}
+  .lt tr{border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:10px;background:#fff!important}
+  .lt td{border:0;padding:3px 0}
+  .lt td:empty{display:none}
+  .lt td:first-child{font-size:17px;padding-bottom:4px}
+  .lt td:not(:first-child)::before{content:attr(data-label);display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+}

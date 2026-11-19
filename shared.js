@@ -44,6 +44,40 @@ function pageInit(pageTitle, active){
     s.style.animationDuration = (9 + Math.random() * 12) + "s"; s.style.animationDelay = (-Math.random() * 15) + "s";
     snow.appendChild(s);
   }
-  const links = [["index.html", "Check-in", "checkin"], ["feedback.html", "Feedback", "feedback"], ["expense.html", "My expense", "expense"]];
+  const links = [["index.html", "Check-in", "checkin"], ["eventlist.html", "Event list", "eventlist"], ["responsible.html", "Responsible", "responsible"], ["feedback.html", "Feedback", "feedback"], ["expense.html", "My expense", "expense"]];
   $("foot").innerHTML = links.map(l => l[2] === active ? "<b style='color:#fff'>" + l[1] + "</b>" : "<a href='" + l[0] + "'>" + l[1] + "</a>").join(" · ");
+}
+
+/* ---------- read-only lists (Event list / Responsible), live from the Google Sheet ---------- */
+function linkify(text){
+  return esc(text).replace(/\+?\d[\d\s\-()]{7,}\d/g, m => {
+    const digits = m.replace(/\D/g, "");
+    return digits.length >= 9 && digits.length <= 15 ? "<a href='tel:" + (m.trim().startsWith("+") ? "+" : "") + digits + "'>" + m + "</a>" : m;
+  });
+}
+async function loadList(which){
+  const box = $("listBox"), note = $("listNote"), q = $("q"), btn = $("refreshBtn");
+  note.classList.add("hidden"); btn.disabled = true;
+  try {
+    const d = await apiGet({action: "list", which});
+    const rows = d.rows || [];
+    if (!rows.length){ box.innerHTML = ""; showMsg(note, "Nothing has been added here yet. Please check again later."); note.className = "msg warn"; return; }
+    let hi = rows.findIndex(r => r.filter(c => c).length >= 2); if (hi < 0) hi = 0;
+    const head = rows[hi], body = rows.slice(hi + 1);
+    const width = Math.max(head.length, ...body.map(r => r.length));
+    const cols = Array.from({length: width}, (_, i) => head[i] || "");
+    const title = rows.slice(0, hi).map(r => r.filter(c => c).join(" ")).join(" · ");
+    $("listTitle").textContent = title;
+    $("listTitle").classList.toggle("hidden", !title);
+    const draw = () => {
+      const f = q.value.trim().toLowerCase();
+      const shown = body.filter(r => !f || r.join(" ").toLowerCase().includes(f));
+      box.innerHTML = shown.length
+        ? "<table class='lt'><thead><tr>" + cols.map(h => "<th>" + esc(h) + "</th>").join("") + "</tr></thead><tbody>" +
+          shown.map(r => "<tr>" + cols.map((h, i) => "<td data-label='" + esc(h) + "'>" + linkify(r[i] || "") + "</td>").join("") + "</tr>").join("") + "</tbody></table>"
+        : "<p class='sub' style='margin:8px 0 0'>No matches.</p>";
+    };
+    q.oninput = draw; draw();
+  } catch(e){ box.innerHTML = ""; note.className = "msg bad"; showMsg(note, e.message); }
+  finally { btn.disabled = false; }
 }
